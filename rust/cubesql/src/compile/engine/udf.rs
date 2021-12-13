@@ -205,6 +205,30 @@ pub fn create_instr_udf() -> ScalarUDF {
     )
 }
 
+pub fn create_ucase_udf() -> ScalarUDF {
+    let fun = make_scalar_function(move |args: &[ArrayRef]| {
+        assert!(args.len() == 1);
+
+        let arg1_arr = downcast_string_arg!(args[0], "str", i32);
+
+        let input_str = arg1_arr.value(0);
+
+        let mut builder = StringBuilder::new(1);
+        builder.append_value(input_str.to_uppercase())?;
+
+        Ok(Arc::new(builder.finish()) as ArrayRef)
+    });
+
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Utf8)));
+
+    ScalarUDF::new(
+        "ucase",
+        &Signature::uniform(1, vec![DataType::Utf8], Volatility::Immutable),
+        &return_type,
+        &fun,
+    )
+}
+
 pub fn create_isnull_udf() -> ScalarUDF {
     let fun = make_scalar_function(move |args: &[ArrayRef]| {
         assert!(args.len() == 1);
